@@ -77,3 +77,24 @@ button:hover {
 .read-the-docs {
   color: #888;
 }
+
+.show-controls-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 24px;
+  font-size: 18px;
+  padding: 12px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Remove legacy styles */
+.logo, .logo:hover, .logo.react:hover, @keyframes logo-spin, @media (prefers-reduced-motion: no-preference), .card, .read-the-docs {
+  display: none !important;
+}
