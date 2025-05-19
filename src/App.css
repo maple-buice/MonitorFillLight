@@ -80,10 +80,11 @@ button:hover {
 
 .show-controls-btn {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 10;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.25);
   color: #fff;
   border: 2px solid #fff;
   border-radius: 24px;
@@ -92,6 +93,11 @@ button:hover {
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.show-controls-btn:hover, .show-controls-btn:focus {
+  opacity: 1;
 }
 
 /* Remove legacy styles */

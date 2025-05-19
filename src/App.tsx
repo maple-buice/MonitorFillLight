@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import './App.css'
 
 // Preset color temperatures in Kelvin and their RGB approximations
@@ -37,18 +37,23 @@ function isColorLight(r: number, g: number, b: number) {
   return (0.299 * r + 0.587 * g + 0.114 * b) > 186
 }
 
+const AUTOHIDE_DELAY = 3000 // ms
+
 function App() {
   const [kelvin, setKelvin] = useState(4000)
   const [brightness, setBrightness] = useState(100)
   const [controlsVisible, setControlsVisible] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [autoHidden, setAutoHidden] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const autohideTimer = useRef<NodeJS.Timeout | null>(null)
 
   const [r, g, b] = kelvinToRgb(kelvin)
   const bgColor = `rgb(${r}, ${g}, ${b})`
   const filter = `brightness(${brightness}%)`
   const fullscreenBtnTextColor = isColorLight(r, g, b) ? '#222' : '#fff'
 
+  // Fullscreen state tracking
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement)
@@ -56,6 +61,44 @@ function App() {
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
+
+  // Auto-hide logic
+  const showControls = useCallback(() => {
+    setControlsVisible(true)
+    setAutoHidden(false)
+    if (autohideTimer.current) clearTimeout(autohideTimer.current)
+    autohideTimer.current = setTimeout(() => {
+      setControlsVisible(false)
+      setAutoHidden(true)
+    }, AUTOHIDE_DELAY)
+  }, [])
+
+  useEffect(() => {
+    if (!controlsVisible) return
+    // Listen for mousemove to reset timer
+    const handleMouseMove = () => {
+      showControls()
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      if (autohideTimer.current) clearTimeout(autohideTimer.current)
+    }
+  }, [controlsVisible, showControls])
+
+  // Show controls on hover over the controls area or Show Controls button
+  const handleControlsMouseEnter = () => {
+    setControlsVisible(true)
+    setAutoHidden(false)
+    if (autohideTimer.current) clearTimeout(autohideTimer.current)
+  }
+
+  // Hide controls when Hide Controls is clicked (manual hide)
+  const handleHideControls = () => {
+    setControlsVisible(false)
+    setAutoHidden(false)
+    if (autohideTimer.current) clearTimeout(autohideTimer.current)
+  }
 
   const handleFullscreen = () => {
     if (containerRef.current) {
@@ -84,17 +127,21 @@ function App() {
       }}
     >
       {controlsVisible ? (
-        <div className="controls" style={{
-          background: 'rgba(0,0,0,0.3)',
-          borderRadius: 12,
-          padding: 24,
-          marginBottom: 32,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          minWidth: 320,
-          maxWidth: '90vw',
-        }}>
+        <div
+          className="controls"
+          style={{
+            background: 'rgba(0,0,0,0.3)',
+            borderRadius: 12,
+            padding: 24,
+            marginBottom: 32,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+            minWidth: 320,
+            maxWidth: '90vw',
+          }}
+          onMouseEnter={handleControlsMouseEnter}
+        >
           <h1 style={{margin: 0, fontSize: 28}}>Monitor Fill Light</h1>
           <button
             onClick={handleFullscreen}
@@ -157,7 +204,7 @@ function App() {
             />
           </div>
           <button
-            onClick={() => setControlsVisible(false)}
+            onClick={handleHideControls}
             style={{
               marginTop: 12,
               alignSelf: 'flex-end',
@@ -177,13 +224,14 @@ function App() {
       ) : (
         <button
           className="show-controls-btn"
-          onClick={() => setControlsVisible(true)}
+          onClick={() => { setControlsVisible(true); setAutoHidden(false); }}
           style={{
             position: 'fixed',
-            bottom: 24,
-            right: 24,
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             zIndex: 10,
-            background: 'rgba(0,0,0,0.7)',
+            background: 'rgba(0,0,0,0.25)',
             color: '#fff',
             border: '2px solid #fff',
             borderRadius: 24,
@@ -192,8 +240,11 @@ function App() {
             fontWeight: 700,
             cursor: 'pointer',
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            opacity: 0.6,
+            transition: 'opacity 0.2s',
           }}
           aria-label="Show controls"
+          onMouseEnter={handleControlsMouseEnter}
         >
           Show Controls
         </button>
