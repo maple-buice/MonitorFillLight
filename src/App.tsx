@@ -135,73 +135,75 @@ function App() {
         transition: 'background 0.2s, filter 0.2s',
       }}
     >
-      {controlsVisible ? (
-        <div
-          className={`controls controls-anim-${controlsAnim}`}
-          onMouseEnter={handleControlsMouseEnter}
-        >
-          <h1 className="fill-title">Monitor Fill Light</h1>
+      <div
+        className={`controls controls-anim-${controlsAnim}`}
+        onMouseEnter={handleControlsMouseEnter}
+      >
+        {controlsVisible ? (
+          <>
+            <h1 className="fill-title">Monitor Fill Light</h1>
+            <button
+              className={`fullscreen-btn ${fullscreenBtnTextColor}`}
+              onClick={handleFullscreen}
+              style={{ background: bgColor }}
+            >
+              {isFullscreen ? 'Exit Fullscreen' : 'Go Fullscreen'}
+            </button>
+            <div className="slider-group">
+              <label htmlFor="kelvin-slider">Color Temperature: <b>{kelvin}K</b></label>
+              <input
+                id="kelvin-slider"
+                className="fill-slider"
+                type="range"
+                min={1900}
+                max={6500}
+                step={10}
+                value={kelvin}
+                onChange={e => setKelvin(Number(e.target.value))}
+              />
+            </div>
+            <div className="presets-row">
+              {PRESETS.map(preset => (
+                <button
+                  key={preset.kelvin}
+                  className={`preset-btn${kelvin === preset.kelvin ? ' active' : ''}`}
+                  onClick={() => setKelvin(preset.kelvin)}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <div className="slider-group">
+              <label htmlFor="brightness-slider">Brightness: <b>{brightness}%</b></label>
+              <input
+                id="brightness-slider"
+                className="fill-slider"
+                type="range"
+                min={10}
+                max={100}
+                step={1}
+                value={brightness}
+                onChange={e => setBrightness(Number(e.target.value))}
+              />
+            </div>
+            <button
+              className="hide-controls-btn"
+              onClick={handleHideControls}
+              aria-label="Hide controls"
+            >
+              Hide Controls
+            </button>
+          </>
+        ) : (
           <button
-            className={`fullscreen-btn ${fullscreenBtnTextColor}`}
-            onClick={handleFullscreen}
-            style={{ background: bgColor }}
+            className={`show-controls-btn show-controls-anim-${showBtnAnim}`}
+            onClick={() => { setControlsVisible(true); setControlsAnim('show'); setShowBtnAnim('hide'); }}
+            onMouseEnter={handleControlsMouseEnter}
           >
-            {isFullscreen ? 'Exit Fullscreen' : 'Go Fullscreen'}
+            Show Controls
           </button>
-          <div className="slider-group">
-            <label htmlFor="kelvin-slider">Color Temperature: <b>{kelvin}K</b></label>
-            <input
-              id="kelvin-slider"
-              className="fill-slider"
-              type="range"
-              min={1900}
-              max={6500}
-              step={10}
-              value={kelvin}
-              onChange={e => setKelvin(Number(e.target.value))}
-            />
-          </div>
-          <div className="presets-row">
-            {PRESETS.map(preset => (
-              <button
-                key={preset.kelvin}
-                className={`preset-btn${kelvin === preset.kelvin ? ' active' : ''}`}
-                onClick={() => setKelvin(preset.kelvin)}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-          <div className="slider-group">
-            <label htmlFor="brightness-slider">Brightness: <b>{brightness}%</b></label>
-            <input
-              id="brightness-slider"
-              className="fill-slider"
-              type="range"
-              min={10}
-              max={100}
-              step={1}
-              value={brightness}
-              onChange={e => setBrightness(Number(e.target.value))}
-            />
-          </div>
-          <button
-            className="hide-controls-btn"
-            onClick={handleHideControls}
-            aria-label="Hide controls"
-          >
-            Hide Controls
-          </button>
-        </div>
-      ) : (
-        <button
-          className={`show-controls-btn show-controls-anim-${showBtnAnim}`}
-          onClick={() => { setControlsVisible(true); setControlsAnim('show'); setShowBtnAnim('hide'); }}
-          onMouseEnter={handleControlsMouseEnter}
-        >
-          Show Controls
-        </button>
-      )}
+        )}
+      </div>
     </div>
   )
 }

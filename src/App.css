@@ -30,10 +30,13 @@
   box-shadow: 0 2px 16px rgba(0,0,0,0.10);
   min-width: 320px;
   max-width: 90vw;
+  min-height: 180px;
   margin-bottom: 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  align-items: center;
+  justify-content: center;
 }
 
 .controls-anim-show {
