@@ -22,19 +22,19 @@
   box-shadow: 0 2px 16px rgba(0,0,0,0.15);
   user-select: none;
   opacity: 1;
-  transform: translateY(0);
+  transform: scale(1);
   transition: opacity 0.3s, transform 0.3s;
 }
 
 .controls-anim-show {
   opacity: 1;
-  transform: translateY(0);
+  transform: scale(1);
   pointer-events: auto;
 }
 
 .controls-anim-hide {
   opacity: 0;
-  transform: translateY(30px);
+  transform: scale(0.95);
   pointer-events: none;
 }
 
@@ -101,8 +101,8 @@ button:hover {
   z-index: 10;
   background: rgba(0,0,0,0.25);
   color: #fff;
-  border: 2px solid #fff;
-  border-radius: 24px;
+  border: none;
+  border-radius: 12px;
   font-size: 18px;
   padding: 12px 20px;
   font-weight: 700;
@@ -113,6 +113,7 @@ button:hover {
 }
 .show-controls-btn:hover, .show-controls-btn:focus {
   opacity: 1;
+  border: none;
 }
 .show-controls-anim-show {
   opacity: 0.6;
@@ -121,7 +122,7 @@ button:hover {
 }
 .show-controls-anim-hide {
   opacity: 0;
-  transform: translate(-50%, -40%) scale(0.95);
+  transform: translate(-50%, -50%) scale(0.95);
   pointer-events: none;
 }
 

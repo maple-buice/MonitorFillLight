@@ -37,7 +37,7 @@ function isColorLight(r: number, g: number, b: number) {
   return (0.299 * r + 0.587 * g + 0.114 * b) > 186
 }
 
-const AUTOHIDE_DELAY = 2000 // ms
+const AUTOHIDE_DELAY = 1000 // ms
 
 function App() {
   const [kelvin, setKelvin] = useState(4000)
