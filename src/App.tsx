@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import './App.css'
 
 // Preset color temperatures in Kelvin and their RGB approximations
@@ -31,19 +31,35 @@ function kelvinToRgb(kelvin: number): [number, number, number] {
   ]
 }
 
+// Utility to determine if a color is light or dark (for contrast)
+function isColorLight(r: number, g: number, b: number) {
+  // Perceived luminance formula
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 186
+}
+
 function App() {
   const [kelvin, setKelvin] = useState(4000)
   const [brightness, setBrightness] = useState(100)
   const [controlsVisible, setControlsVisible] = useState(true)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const [r, g, b] = kelvinToRgb(kelvin)
   const bgColor = `rgb(${r}, ${g}, ${b})`
   const filter = `brightness(${brightness}%)`
+  const fullscreenBtnTextColor = isColorLight(r, g, b) ? '#222' : '#fff'
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   const handleFullscreen = () => {
     if (containerRef.current) {
-      if (document.fullscreenElement) {
+      if (isFullscreen) {
         document.exitFullscreen()
       } else {
         containerRef.current.requestFullscreen()
@@ -85,14 +101,15 @@ function App() {
             style={{
               fontSize: 18,
               padding: '8px 16px',
-              color: '#fff', // High contrast text
-              background: '#222',
+              color: fullscreenBtnTextColor,
+              background: bgColor,
               border: '2px solid #fff',
               fontWeight: 700,
               marginBottom: 8,
+              transition: 'color 0.2s, background 0.2s',
             }}
           >
-            {document.fullscreenElement ? 'Exit Fullscreen' : 'Go Fullscreen'}
+            {isFullscreen ? 'Exit Fullscreen' : 'Go Fullscreen'}
           </button>
           <div>
             <label htmlFor="kelvin-slider">Color Temperature: <b>{kelvin}K</b></label>
