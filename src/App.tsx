@@ -145,7 +145,6 @@ function App() {
             <button
               className={`fullscreen-btn ${fullscreenBtnTextColor}`}
               onClick={handleFullscreen}
-              style={{ background: bgColor }}
             >
               {isFullscreen ? 'Exit Fullscreen' : 'Go Fullscreen'}
             </button>
