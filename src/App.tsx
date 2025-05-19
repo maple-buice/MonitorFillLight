@@ -13,7 +13,7 @@ const PRESETS = [
 
 // Convert Kelvin to RGB (approximate)
 function kelvinToRgb(kelvin: number): [number, number, number] {
-  let temp = kelvin / 100
+  const temp = kelvin / 100
   let red, green, blue
   if (temp <= 66) {
     red = 255
@@ -44,16 +44,15 @@ function App() {
   const [brightness, setBrightness] = useState(100)
   const [controlsVisible, setControlsVisible] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [autoHidden, setAutoHidden] = useState(false)
   const [controlsAnim, setControlsAnim] = useState('show')
   const [showBtnAnim, setShowBtnAnim] = useState('hide')
   const containerRef = useRef<HTMLDivElement>(null)
-  const autohideTimer = useRef<NodeJS.Timeout | null>(null)
+  const autohideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [r, g, b] = kelvinToRgb(kelvin)
   const bgColor = `rgb(${r}, ${g}, ${b})`
   const filter = `brightness(${brightness}%)`
-  const fullscreenBtnTextColor = isColorLight(r, g, b) ? '#222' : '#fff'
+  const fullscreenBtnTextColor = isColorLight(r, g, b) ? 'dark' : 'light'
 
   // Fullscreen state tracking
   useEffect(() => {
@@ -67,7 +66,6 @@ function App() {
   // Auto-hide logic
   const showControls = useCallback(() => {
     setControlsVisible(true)
-    setAutoHidden(false)
     setControlsAnim('show')
     setShowBtnAnim('hide')
     if (autohideTimer.current) clearTimeout(autohideTimer.current)
@@ -76,7 +74,6 @@ function App() {
       setShowBtnAnim('show')
       setTimeout(() => {
         setControlsVisible(false)
-        setAutoHidden(true)
       }, 300) // match animation duration
     }, AUTOHIDE_DELAY)
   }, [])
@@ -97,7 +94,6 @@ function App() {
   // Show controls on hover over the controls area or Show Controls button
   const handleControlsMouseEnter = () => {
     setControlsVisible(true)
-    setAutoHidden(false)
     setControlsAnim('show')
     setShowBtnAnim('hide')
     if (autohideTimer.current) clearTimeout(autohideTimer.current)
@@ -109,7 +105,6 @@ function App() {
     setShowBtnAnim('show')
     setTimeout(() => {
       setControlsVisible(false)
-      setAutoHidden(false)
     }, 300)
     if (autohideTimer.current) clearTimeout(autohideTimer.current)
   }
@@ -143,93 +138,56 @@ function App() {
       {controlsVisible ? (
         <div
           className={`controls controls-anim-${controlsAnim}`}
-          style={{
-            background: 'rgba(0,0,0,0.3)',
-            borderRadius: 12,
-            padding: 24,
-            marginBottom: 32,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-            minWidth: 320,
-            maxWidth: '90vw',
-          }}
           onMouseEnter={handleControlsMouseEnter}
         >
-          <h1 style={{margin: 0, fontSize: 28}}>Monitor Fill Light</h1>
+          <h1 className="fill-title">Monitor Fill Light</h1>
           <button
+            className={`fullscreen-btn ${fullscreenBtnTextColor}`}
             onClick={handleFullscreen}
-            style={{
-              fontSize: 18,
-              padding: '8px 16px',
-              color: fullscreenBtnTextColor,
-              background: bgColor,
-              border: '2px solid #fff',
-              fontWeight: 700,
-              marginBottom: 8,
-              transition: 'color 0.2s, background 0.2s',
-            }}
+            style={{ background: bgColor }}
           >
             {isFullscreen ? 'Exit Fullscreen' : 'Go Fullscreen'}
           </button>
-          <div>
+          <div className="slider-group">
             <label htmlFor="kelvin-slider">Color Temperature: <b>{kelvin}K</b></label>
             <input
               id="kelvin-slider"
+              className="fill-slider"
               type="range"
               min={1900}
               max={6500}
               step={10}
               value={kelvin}
               onChange={e => setKelvin(Number(e.target.value))}
-              style={{ width: '100%' }}
             />
           </div>
-          <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+          <div className="presets-row">
             {PRESETS.map(preset => (
               <button
                 key={preset.kelvin}
+                className={`preset-btn${kelvin === preset.kelvin ? ' active' : ''}`}
                 onClick={() => setKelvin(preset.kelvin)}
-                style={{
-                  background: kelvin === preset.kelvin ? '#fff' : '#eee',
-                  color: kelvin === preset.kelvin ? '#222' : '#444',
-                  border: '1px solid #ccc',
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  fontWeight: kelvin === preset.kelvin ? 700 : 400,
-                  cursor: 'pointer',
-                }}
               >
                 {preset.label}
               </button>
             ))}
           </div>
-          <div>
+          <div className="slider-group">
             <label htmlFor="brightness-slider">Brightness: <b>{brightness}%</b></label>
             <input
               id="brightness-slider"
+              className="fill-slider"
               type="range"
               min={10}
               max={100}
               step={1}
               value={brightness}
               onChange={e => setBrightness(Number(e.target.value))}
-              style={{ width: '100%' }}
             />
           </div>
           <button
+            className="hide-controls-btn"
             onClick={handleHideControls}
-            style={{
-              marginTop: 12,
-              alignSelf: 'flex-end',
-              background: 'rgba(0,0,0,0.5)',
-              color: '#fff',
-              border: 'none',
-              fontSize: 16,
-              padding: '4px 12px',
-              borderRadius: 6,
-              cursor: 'pointer',
-            }}
             aria-label="Hide controls"
           >
             Hide Controls
@@ -238,26 +196,7 @@ function App() {
       ) : (
         <button
           className={`show-controls-btn show-controls-anim-${showBtnAnim}`}
-          onClick={() => { setControlsVisible(true); setAutoHidden(false); setControlsAnim('show'); setShowBtnAnim('hide'); }}
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10,
-            background: 'rgba(0,0,0,0.25)',
-            color: '#fff',
-            border: '2px solid #fff',
-            borderRadius: 24,
-            fontSize: 18,
-            padding: '12px 20px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-            opacity: 0.6,
-            transition: 'opacity 0.2s',
-          }}
-          aria-label="Show controls"
+          onClick={() => { setControlsVisible(true); setControlsAnim('show'); setShowBtnAnim('hide'); }}
           onMouseEnter={handleControlsMouseEnter}
         >
           Show Controls
