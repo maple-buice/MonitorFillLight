@@ -21,6 +21,21 @@
   z-index: 2;
   box-shadow: 0 2px 16px rgba(0,0,0,0.15);
   user-select: none;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.controls-anim-show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.controls-anim-hide {
+  opacity: 0;
+  transform: translateY(30px);
+  pointer-events: none;
 }
 
 input[type="range"] {
@@ -94,10 +109,20 @@ button:hover {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   opacity: 0.6;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.3s;
 }
 .show-controls-btn:hover, .show-controls-btn:focus {
   opacity: 1;
+}
+.show-controls-anim-show {
+  opacity: 0.6;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+.show-controls-anim-hide {
+  opacity: 0;
+  transform: translate(-50%, -40%) scale(0.95);
+  pointer-events: none;
 }
 
 /* Remove legacy styles */

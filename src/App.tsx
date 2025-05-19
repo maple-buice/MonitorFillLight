@@ -37,7 +37,7 @@ function isColorLight(r: number, g: number, b: number) {
   return (0.299 * r + 0.587 * g + 0.114 * b) > 186
 }
 
-const AUTOHIDE_DELAY = 3000 // ms
+const AUTOHIDE_DELAY = 2000 // ms
 
 function App() {
   const [kelvin, setKelvin] = useState(4000)
@@ -45,6 +45,8 @@ function App() {
   const [controlsVisible, setControlsVisible] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [autoHidden, setAutoHidden] = useState(false)
+  const [controlsAnim, setControlsAnim] = useState('show')
+  const [showBtnAnim, setShowBtnAnim] = useState('hide')
   const containerRef = useRef<HTMLDivElement>(null)
   const autohideTimer = useRef<NodeJS.Timeout | null>(null)
 
@@ -66,10 +68,16 @@ function App() {
   const showControls = useCallback(() => {
     setControlsVisible(true)
     setAutoHidden(false)
+    setControlsAnim('show')
+    setShowBtnAnim('hide')
     if (autohideTimer.current) clearTimeout(autohideTimer.current)
     autohideTimer.current = setTimeout(() => {
-      setControlsVisible(false)
-      setAutoHidden(true)
+      setControlsAnim('hide')
+      setShowBtnAnim('show')
+      setTimeout(() => {
+        setControlsVisible(false)
+        setAutoHidden(true)
+      }, 300) // match animation duration
     }, AUTOHIDE_DELAY)
   }, [])
 
@@ -90,13 +98,19 @@ function App() {
   const handleControlsMouseEnter = () => {
     setControlsVisible(true)
     setAutoHidden(false)
+    setControlsAnim('show')
+    setShowBtnAnim('hide')
     if (autohideTimer.current) clearTimeout(autohideTimer.current)
   }
 
   // Hide controls when Hide Controls is clicked (manual hide)
   const handleHideControls = () => {
-    setControlsVisible(false)
-    setAutoHidden(false)
+    setControlsAnim('hide')
+    setShowBtnAnim('show')
+    setTimeout(() => {
+      setControlsVisible(false)
+      setAutoHidden(false)
+    }, 300)
     if (autohideTimer.current) clearTimeout(autohideTimer.current)
   }
 
@@ -128,7 +142,7 @@ function App() {
     >
       {controlsVisible ? (
         <div
-          className="controls"
+          className={`controls controls-anim-${controlsAnim}`}
           style={{
             background: 'rgba(0,0,0,0.3)',
             borderRadius: 12,
@@ -223,8 +237,8 @@ function App() {
         </div>
       ) : (
         <button
-          className="show-controls-btn"
-          onClick={() => { setControlsVisible(true); setAutoHidden(false); }}
+          className={`show-controls-btn show-controls-anim-${showBtnAnim}`}
+          onClick={() => { setControlsVisible(true); setAutoHidden(false); setControlsAnim('show'); setShowBtnAnim('hide'); }}
           style={{
             position: 'fixed',
             top: '50%',
