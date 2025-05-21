@@ -11,24 +11,42 @@ const PRESETS = [
   { label: 'Cool Daylight (6500K)', kelvin: 6500 },
 ]
 
-// Convert Kelvin to RGB (approximate)
+// Convert Kelvin to RGB (scientific, Tanner Helland's algorithm)
 function kelvinToRgb(kelvin: number): [number, number, number] {
-  const temp = kelvin / 100
-  let red, green, blue
+  const temp = kelvin / 100;
+  let red, green, blue;
+
+  // Red
   if (temp <= 66) {
-    red = 255
-    green = temp < 66 ? 99.4708025861 * Math.log(temp) - 161.1195681661 : 255
-    blue = temp <= 19 ? 0 : 138.5177312231 * Math.log(temp - 10) - 305.0447927307
+    red = 255;
   } else {
-    red = 329.698727446 * Math.pow(temp - 60, -0.1332047592)
-    green = 288.1221695283 * Math.pow(temp - 60, -0.0755148492)
-    blue = 255
+    red = temp - 60;
+    red = 329.698727446 * Math.pow(red, -0.1332047592);
+    red = Math.min(Math.max(red, 0), 255);
   }
-  return [
-    Math.max(0, Math.min(255, red)),
-    Math.max(0, Math.min(255, green)),
-    Math.max(0, Math.min(255, blue)),
-  ]
+
+  // Green
+  if (temp <= 66) {
+    green = 99.4708025861 * Math.log(temp) - 161.1195681661;
+    green = Math.min(Math.max(green, 0), 255);
+  } else {
+    green = temp - 60;
+    green = 288.1221695283 * Math.pow(green, -0.0755148492);
+    green = Math.min(Math.max(green, 0), 255);
+  }
+
+  // Blue
+  if (temp >= 66) {
+    blue = 255;
+  } else if (temp <= 19) {
+    blue = 0;
+  } else {
+    blue = temp - 10;
+    blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
+    blue = Math.min(Math.max(blue, 0), 255);
+  }
+
+  return [Math.round(red), Math.round(green), Math.round(blue)];
 }
 
 // Utility to determine if a color is light or dark (for contrast)
@@ -39,20 +57,35 @@ function isColorLight(r: number, g: number, b: number) {
 
 const AUTOHIDE_DELAY = 1000 // ms
 
-function App() {
-  const [kelvin, setKelvin] = useState(4000)
+type ControlsState = 'visible' | 'hiding' | 'hidden';
+
+interface AppProps {
+  animationDuration?: number;
+}
+
+function App({ animationDuration = 300 }: AppProps) {
+  const [kelvin, setKelvin] = useState(5600)
   const [brightness, setBrightness] = useState(100)
-  const [controlsVisible, setControlsVisible] = useState(true)
+  const [controlsState, setControlsState] = useState<ControlsState>('visible')
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [controlsAnim, setControlsAnim] = useState('show')
-  const [showBtnAnim, setShowBtnAnim] = useState('hide')
   const containerRef = useRef<HTMLDivElement>(null)
   const autohideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const animTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [r, g, b] = kelvinToRgb(kelvin)
   const bgColor = `rgb(${r}, ${g}, ${b})`
   const filter = `brightness(${brightness}%)`
-  const fullscreenBtnTextColor = isColorLight(r, g, b) ? 'dark' : 'light'
+  const textColor = isColorLight(r, g, b) ? '#222' : '#fff';
+  const isBgLight = isColorLight(r, g, b);
+  const presetBtnBaseStyle = isBgLight
+    ? { background: '#fff', color: '#222', border: '1.5px solid #222' }
+    : { background: '#222', color: '#fff', border: '1.5px solid #fff' };
+  const presetBtnActiveStyle = isBgLight
+    ? { background: '#fff', color: '#222', border: '2.5px solid #222', fontWeight: 700 }
+    : { background: '#222', color: '#fff', border: '2.5px solid #fff', fontWeight: 700 };
+  const fullscreenBtnStyle = isBgLight
+    ? { background: '#fff', color: '#222', border: '2px solid #222' }
+    : { background: '#222', color: '#fff', border: '2px solid #fff' };
 
   // Fullscreen state tracking
   useEffect(() => {
@@ -63,50 +96,48 @@ function App() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
-  // Auto-hide logic
+  // Show controls and start auto-hide timer
   const showControls = useCallback(() => {
-    setControlsVisible(true)
-    setControlsAnim('show')
-    setShowBtnAnim('hide')
-    if (autohideTimer.current) clearTimeout(autohideTimer.current)
+    setControlsState(prev => (prev !== 'visible' ? 'visible' : prev));
+    if (autohideTimer.current) clearTimeout(autohideTimer.current);
+    if (animTimer.current) clearTimeout(animTimer.current);
     autohideTimer.current = setTimeout(() => {
-      setControlsAnim('hide')
-      setShowBtnAnim('show')
-      setTimeout(() => {
-        setControlsVisible(false)
-      }, 300) // match animation duration
-    }, AUTOHIDE_DELAY)
-  }, [])
+      setControlsState('hiding');
+      if (animationDuration === 0) {
+        setControlsState('hidden');
+      } else {
+        animTimer.current = setTimeout(() => {
+          setControlsState('hidden');
+        }, animationDuration);
+      }
+    }, AUTOHIDE_DELAY);
+  }, [animationDuration]);
 
-  useEffect(() => {
-    if (!controlsVisible) return
-    // Listen for mousemove to reset timer
-    const handleMouseMove = () => {
-      showControls()
-    }
-    window.addEventListener('mousemove', handleMouseMove)
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      if (autohideTimer.current) clearTimeout(autohideTimer.current)
-    }
-  }, [controlsVisible, showControls])
-
-  // Show controls on hover over the controls area or Show Controls button
+  // Pause auto-hide while mouse is over controls
   const handleControlsMouseEnter = () => {
-    setControlsVisible(true)
-    setControlsAnim('show')
-    setShowBtnAnim('hide')
-    if (autohideTimer.current) clearTimeout(autohideTimer.current)
-  }
+    if (autohideTimer.current) clearTimeout(autohideTimer.current);
+    if (animTimer.current) clearTimeout(animTimer.current);
+    setControlsState('visible');
+  };
 
-  // Hide controls when Hide Controls is clicked (manual hide)
-  const handleHideControls = () => {
-    setControlsAnim('hide')
-    setShowBtnAnim('show')
-    setTimeout(() => {
-      setControlsVisible(false)
-    }, 300)
-    if (autohideTimer.current) clearTimeout(autohideTimer.current)
+  const handleControlsMouseLeave = () => {
+    if (autohideTimer.current) clearTimeout(autohideTimer.current);
+    if (animTimer.current) clearTimeout(animTimer.current);
+    autohideTimer.current = setTimeout(() => {
+      setControlsState('hiding');
+      if (animationDuration === 0) {
+        setControlsState('hidden');
+      } else {
+        animTimer.current = setTimeout(() => {
+          setControlsState('hidden');
+        }, animationDuration);
+      }
+    }, AUTOHIDE_DELAY);
+  };
+
+  const handleShowControlsBtn = () => {
+    setControlsState('visible')
+    showControls()
   }
 
   const handleFullscreen = () => {
@@ -118,6 +149,20 @@ function App() {
       }
     }
   }
+
+  // Determine animation class
+  let controlsAnimClass = ''
+  if (controlsState === 'visible') controlsAnimClass = 'controls-anim-show'
+  else if (controlsState === 'hiding') controlsAnimClass = 'controls-anim-hide'
+  else controlsAnimClass = 'controls-anim-hide'
+
+  // Cleanup timers on unmount only
+  useEffect(() => {
+    return () => {
+      if (autohideTimer.current) clearTimeout(autohideTimer.current);
+      if (animTimer.current) clearTimeout(animTimer.current);
+    };
+  }, []);
 
   return (
     <div
@@ -133,76 +178,84 @@ function App() {
         alignItems: 'center',
         justifyContent: 'center',
         transition: 'background 0.2s, filter 0.2s',
+        position: 'relative',
       }}
     >
-      <div
-        className={`controls controls-anim-${controlsAnim}`}
-        onMouseEnter={handleControlsMouseEnter}
-      >
-        {controlsVisible ? (
-          <>
-            <h1 className="fill-title">Monitor Fill Light</h1>
-            <button
-              className={`fullscreen-btn ${fullscreenBtnTextColor}`}
-              onClick={handleFullscreen}
-            >
-              {isFullscreen ? 'Exit Fullscreen' : 'Go Fullscreen'}
-            </button>
-            <div className="slider-group">
-              <label htmlFor="kelvin-slider">Color Temperature: <b>{kelvin}K</b></label>
-              <input
-                id="kelvin-slider"
-                className="fill-slider"
-                type="range"
-                min={1900}
-                max={6500}
-                step={10}
-                value={kelvin}
-                onChange={e => setKelvin(Number(e.target.value))}
-              />
-            </div>
-            <div className="presets-row">
-              {PRESETS.map(preset => (
-                <button
-                  key={preset.kelvin}
-                  className={`preset-btn${kelvin === preset.kelvin ? ' active' : ''}`}
-                  onClick={() => setKelvin(preset.kelvin)}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-            <div className="slider-group">
-              <label htmlFor="brightness-slider">Brightness: <b>{brightness}%</b></label>
-              <input
-                id="brightness-slider"
-                className="fill-slider"
-                type="range"
-                min={10}
-                max={100}
-                step={1}
-                value={brightness}
-                onChange={e => setBrightness(Number(e.target.value))}
-              />
-            </div>
-            <button
-              className="hide-controls-btn"
-              onClick={handleHideControls}
-              aria-label="Hide controls"
-            >
-              Hide Controls
-            </button>
-          </>
-        ) : (
+      {controlsState !== 'hidden' ? (
+        <div
+          className={`controls ${controlsAnimClass}`}
+          onMouseEnter={handleControlsMouseEnter}
+          onMouseLeave={handleControlsMouseLeave}
+          style={{ color: textColor }}
+        >
+          <h1 className="fill-title" style={{ color: textColor }}>Monitor Fill Light</h1>
           <button
-            className={`show-controls-btn show-controls-anim-${showBtnAnim}`}
-            onClick={() => { setControlsVisible(true); setControlsAnim('show'); setShowBtnAnim('hide'); }}
-            onMouseEnter={handleControlsMouseEnter}
+            className="fullscreen-btn"
+            style={{ ...fullscreenBtnStyle, fontWeight: 600, fontSize: 24, padding: '16px 32px', borderRadius: 12, margin: '24px 0' }}
+            onClick={handleFullscreen}
           >
-            Show Controls
+            {isFullscreen ? 'Exit Fullscreen' : 'Go Fullscreen'}
           </button>
-        )}
-      </div>
+          <div className="slider-group">
+            <label htmlFor="kelvin-slider" style={{ color: textColor }}>
+              Color Temperature: <b>{kelvin}K</b>
+            </label>
+            <input
+              id="kelvin-slider"
+              className="fill-slider"
+              type="range"
+              min={1900}
+              max={6500}
+              step={10}
+              value={kelvin}
+              onChange={e => setKelvin(Number(e.target.value))}
+            />
+          </div>
+          <div className="presets-row">
+            {PRESETS.map(preset => (
+              <button
+                key={preset.kelvin}
+                className={`preset-btn${kelvin === preset.kelvin ? ' active' : ''}`}
+                style={kelvin === preset.kelvin ? presetBtnActiveStyle : presetBtnBaseStyle}
+                onClick={() => setKelvin(preset.kelvin)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+          <div className="slider-group">
+            <label htmlFor="brightness-slider" style={{ color: textColor }}>
+              Brightness: <b>{brightness}%</b>
+            </label>
+            <input
+              id="brightness-slider"
+              className="fill-slider"
+              type="range"
+              min={10}
+              max={100}
+              step={1}
+              value={brightness}
+              onChange={e => setBrightness(Number(e.target.value))}
+            />
+          </div>
+        </div>
+      ) : null}
+      {controlsState === 'hidden' && (
+        <button
+          className="show-controls-btn show-controls-anim-show"
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+          }}
+          onClick={handleShowControlsBtn}
+          onMouseEnter={handleControlsMouseEnter}
+        >
+          Show Controls
+        </button>
+      )}
     </div>
   )
 }
