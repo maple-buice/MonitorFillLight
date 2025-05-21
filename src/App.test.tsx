@@ -16,7 +16,7 @@ beforeAll(() => {
 });
 
 describe('Monitor Fill Light Controls', () => {
-  let user;
+  let user: ReturnType<typeof userEvent.setup>;
   beforeEach(() => {
     user = userEvent.setup();
   });
@@ -35,7 +35,7 @@ describe('Monitor Fill Light Controls', () => {
     const controls = screen.getByText(/Monitor Fill Light/i).closest('.controls');
     // Simulate mouse leave
     await act(async () => {
-      controls && fireEvent.mouseLeave(controls);
+      if(controls) fireEvent.mouseLeave(controls);
     });
     await new Promise(res => setTimeout(res, 1000));
     await waitFor(() => {
@@ -47,7 +47,7 @@ describe('Monitor Fill Light Controls', () => {
     render(<App animationDuration={0} />);
     const controls = screen.getByText(/Monitor Fill Light/i).closest('.controls');
     await act(async () => {
-      controls && fireEvent.mouseLeave(controls);
+      if(controls) fireEvent.mouseLeave(controls);
     });
     await new Promise(res => setTimeout(res, 1000));
     await waitFor(() => {
@@ -63,7 +63,7 @@ describe('Monitor Fill Light Controls', () => {
     render(<App animationDuration={0} />);
     const controls = screen.getByText(/Monitor Fill Light/i).closest('.controls');
     await act(async () => {
-      controls && fireEvent.mouseEnter(controls);
+      if(controls) fireEvent.mouseEnter(controls);
     });
     await new Promise(res => setTimeout(res, 1500));
     expect(screen.queryByRole('button', { name: /Show controls/i })).not.toBeInTheDocument();
